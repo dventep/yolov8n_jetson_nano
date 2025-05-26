@@ -1,0 +1,10 @@
+# Construir el contenedor
+docker build -t trash_yv8n .
+
+# Ejecutar el contenedor con acceso a GPIO y cámara
+docker run -it --rm --runtime nvidia \
+  --privileged \
+  --device /dev/video0 \
+  -v /dev:/dev \
+  --network host \
+  trash_yv8n

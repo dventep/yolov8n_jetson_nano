@@ -1,8 +1,9 @@
 import cv2
 import time
+import threading
 from ultralytics import YOLO
 
-model_path = 'Model/modelo_yolov8n_v2.pt'
+model_path = 'Model/trash_yolov8n_640_v1.pt'
 model = YOLO(model_path)
 
 cap = cv2.VideoCapture(0)
