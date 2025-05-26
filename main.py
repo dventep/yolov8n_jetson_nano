@@ -7,31 +7,30 @@ import platform
 # Detectar si es Jetson (aarch64)
 IS_JETSON = platform.machine() == "aarch64"
 
+# Pines GPIO por cada bote (ajusta si usas otros)
+botes_a_pines = {
+    "BotePlastico": 33,
+    "BotePapel": 35,
+    "BoteBateria": 37,
+    "BoteVidrio": 32
+}
+
+# PWM de cada servo
+pwm_servos = {}
+
 if IS_JETSON:
     import Jetson.GPIO as GPIO
     GPIO.setmode(GPIO.BOARD)
-    SERVO_PIN = 33
-    GPIO.setup(SERVO_PIN, GPIO.OUT)
-    pwm = GPIO.PWM(SERVO_PIN, 50)
-    pwm.start(0)
 
-def mover_servo_angulo(angulo):
-    if IS_JETSON:
-        duty = 2 + (angulo / 18)
-        pwm.ChangeDutyCycle(duty)
-        time.sleep(0.5)
-        pwm.ChangeDutyCycle(0)
-    else:
-        print(f"[PC Simulación] Servo movería a {angulo}°")
-
-
-# Estados de los botes
-botes_estado = {
-    "BotePlastico": False,
-    "BotePapel": False,
-    "BoteBateria": False,
-    "BoteVidrio": False
-}
+    for bote, pin in botes_a_pines.items():
+        GPIO.setup(pin, GPIO.OUT)
+        pwm = GPIO.PWM(pin, 50)  # 50Hz
+        pwm.start(0)
+        pwm_servos[bote] = pwm
+        
+# Estados y temporizadores
+botes_estado = {bote: False for bote in botes_a_pines}
+botes_timers = {bote: None for bote in botes_a_pines}
 
 # Mapeo clase → Bote
 clase_a_bote = {
@@ -43,38 +42,36 @@ clase_a_bote = {
     "Bateria": "BoteBateria"
 }
 
-botes_timers = {
-    "BotePlastico": None,
-    "BotePapel": None,
-    "BoteBateria": None,
-    "BoteVidrio": None
-}
+# Angulo cerrado por defecto (todos se abren a 0° y cierran a 90°)
+ANGULO_ABIERTO = 0
+ANGULO_CERRADO = 90
 
-bote_a_angulo = {
-    "BotePlastico": 90,
-    "BotePapel": 45,
-    "BoteVidrio": 135,
-    "BoteBateria": 0
-}
+def mover_servo(bote, angulo):
+    if IS_JETSON:
+        duty = 2 + (angulo / 18)
+        pwm_servos[bote].ChangeDutyCycle(duty)
+        time.sleep(0.5)
+        pwm_servos[bote].ChangeDutyCycle(0)
+    else:
+        print(f"[PC Simulación] {bote} movería a {angulo}°")
 
 def desactivar_bote(bote):
     botes_estado[bote] = False
     botes_timers[bote] = None
-    print(f"{bote} DESACTIVADO")
+    mover_servo(bote, ANGULO_CERRADO)
+    print(f"{bote} DESACTIVADO (cerrado)")
 
 def activar_bote(bote):
     if not botes_estado[bote]:
         botes_estado[bote] = True
-        print(f"{bote} ACTIVADO")
-        mover_servo_angulo(bote_a_angulo[bote])
+        print(f"{bote} ACTIVADO (abierto)")
+        mover_servo(bote, ANGULO_ABIERTO)
     else:
         print(f"{bote} ya activo, reiniciando temporizador.")
 
-    # Cancelar temporizador anterior si existe
+    # Cancelar y reiniciar temporizador
     if botes_timers[bote]:
         botes_timers[bote].cancel()
-
-    # Reiniciar temporizador de 5s
     t = threading.Timer(5, desactivar_bote, args=[bote])
     botes_timers[bote] = t
     t.start()
@@ -103,7 +100,6 @@ while True:
         results = model.predict(source=frame, conf=0.6, stream=False)
         annotated_frame = results[0].plot()
 
-        # Leer predicciones
         for box in results[0].boxes:
             cls_index = int(box.cls[0].item())
             nombre_clase = model.names[cls_index]
@@ -114,6 +110,7 @@ while True:
     else:
         annotated_frame = annotated_frame if 'annotated_frame' in locals() else frame
 
+
     cv2.imshow("YOLOv8 Object Detection", annotated_frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
@@ -121,6 +118,8 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 
+# Limpieza
 if IS_JETSON:
-    pwm.stop()
+    for pwm in pwm_servos.values():
+        pwm.stop()
     GPIO.cleanup()
