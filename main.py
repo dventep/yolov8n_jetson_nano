@@ -62,19 +62,20 @@ def desactivar_bote(bote):
     print(f"{bote} DESACTIVADO (cerrado)")
 
 def activar_bote(bote):
-    if not botes_estado[bote]:
-        botes_estado[bote] = True
-        print(f"{bote} ACTIVADO (abierto)")
-        mover_servo(bote, ANGULO_ABIERTO)
-    else:
-        print(f"{bote} ya activo, reiniciando temporizador.")
+    if "BotePlastico" in bote or bote == "BoteVidrio":
+        if not botes_estado[bote]:
+            botes_estado[bote] = True
+            print(f"{bote} ACTIVADO (abierto)")
+            mover_servo(bote, ANGULO_ABIERTO)
+        else:
+            print(f"{bote} ya activo, reiniciando temporizador.")
 
-    # Cancelar y reiniciar temporizador
-    if botes_timers[bote]:
-        botes_timers[bote].cancel()
-    t = threading.Timer(5, desactivar_bote, args=[bote])
-    botes_timers[bote] = t
-    t.start()
+        # Cancelar y reiniciar temporizador
+        if botes_timers[bote]:
+            botes_timers[bote].cancel()
+        t = threading.Timer(5, desactivar_bote, args=[bote])
+        botes_timers[bote] = t
+        t.start()
 
 model_path = 'Model/trash_yolov8n_640_v1.pt'
 model = YOLO(model_path)
