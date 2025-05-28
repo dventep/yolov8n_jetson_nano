@@ -9,10 +9,10 @@ IS_JETSON = platform.machine() == "aarch64"
 
 # Pines GPIO por cada bote (ajusta si usas otros)
 botes_a_pines = {
-    "BotePlastico": 33,
+    "BotePlastico": 19,
     "BotePapel": 35,
     "BoteBateria": 37,
-    "BoteVidrio": 32
+    "BoteVidrio": 18
 }
 
 # PWM de cada servo
