@@ -32,7 +32,7 @@ if IS_JETSON:
 botes_estado = {bote: False for bote in botes_a_pines}
 botes_timers = {bote: None for bote in botes_a_pines}
 
-# Mapeo clase → Bote
+# Mapeo clase Bote
 clase_a_bote = {
     "HojaPapel": "BotePapel",
     "TazaPapel": "BotePapel",
@@ -42,7 +42,7 @@ clase_a_bote = {
     "Bateria": "BoteBateria"
 }
 
-# Angulo cerrado por defecto (todos se abren a 0° y cierran a 90°)
+# Angulo cerrado por defecto (todos se abren a 0 y cierran a 90)
 ANGULO_ABIERTO = 0
 ANGULO_CERRADO = 90
 
@@ -53,7 +53,7 @@ def mover_servo(bote, angulo):
         time.sleep(0.5)
         pwm_servos[bote].ChangeDutyCycle(0)
     else:
-        print(f"[PC Simulación] {bote} movería a {angulo}°")
+        print(f"[PC Simulacion] {bote} moveria a {angulo} grados")
 
 def desactivar_bote(bote):
     botes_estado[bote] = False
@@ -79,13 +79,13 @@ def activar_bote(bote):
 model_path = 'Model/trash_yolov8n_640_v1.pt'
 model = YOLO(model_path)
 
-# Tiempo del último análisis
+# Tiempo del ultimo analisis
 last_detection_time = 0
 detection_interval = 0.3  # segundos
 
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
-    print("Error: Could not open video.")
+    print("Error: No se pudo abrir la camara.")
     exit()
 
 while True:
@@ -109,7 +109,6 @@ while True:
                 activar_bote(bote)
     else:
         annotated_frame = annotated_frame if 'annotated_frame' in locals() else frame
-
 
     cv2.imshow("YOLOv8 Object Detection", annotated_frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
